@@ -1,4 +1,5 @@
 <?php
+header('Access-Control-Allow-Origin: *');  
 defined('BASEPATH');
 require '../../vendor/autoload.php';
 $io = new \PHPSocketIO\SocketIO(3000);
