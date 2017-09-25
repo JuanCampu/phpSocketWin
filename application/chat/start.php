@@ -4,6 +4,7 @@ use Workerman\WebServer;
 use Workerman\Autoloader;
 use PHPSocketIO\SocketIO;
 
+phpinfo();
 // composer autoload
 
 require_once __DIR__ . '/../../vendor/autoload.php';
