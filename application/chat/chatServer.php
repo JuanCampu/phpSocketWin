@@ -1,7 +1,7 @@
 <?php
 defined('BASEPATH');
 require '../../vendor/autoload.php';
-$io = new \PHPSocketIO\SocketIO(443);
+$io = new \PHPSocketIO\SocketIO(2021);
 $io->on('connection', function($socket)use($io){
   print_r("User Connected");
   $socket->on('chat message', function($msg)use($io){
