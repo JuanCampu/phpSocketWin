@@ -1,5 +1,5 @@
 <?php
-/* use Workerman\Worker;
+ use Workerman\Worker;
 use Workerman\WebServer;
 use Workerman\Autoloader;
 use PHPSocketIO\SocketIO;
@@ -76,9 +76,4 @@ $io->on('connection', function($socket){
 
 if (!defined('GLOBAL_START')) {
     Worker::runAll();
-} */
-
-
-
-
-echo "hola mundo";
+} 
