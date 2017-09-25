@@ -9,7 +9,7 @@ use PHPSocketIO\SocketIO;
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
-$io = new SocketIO(2021);
+$io = new SocketIO(process.env.port);
 $io->on('connection', function($socket){
     $socket->addedUser = false;
     print_r("user connection ");
