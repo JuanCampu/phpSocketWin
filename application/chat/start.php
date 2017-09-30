@@ -9,38 +9,92 @@ use PHPSocketIO\SocketIO;
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
-$io = new SocketIO(process.env.port);
+$io = new SocketIO(2000);
+$usernames = array();
+$userRooms = array();
+$clients = array();
+
 $io->on('connection', function($socket){
     $socket->addedUser = false;
-    print_r("user connection ");
+   
     // when the client emits 'new message', this listens and executes
     $socket->on('message', function ($data)use($socket){
+        global $usernames, $clients;
         // we tell the client to execute 'new message'
-        print_r($data);
-        $socket->emit('message', 'Hola');
-        $socket->broadcast->emit('message', array(
-            'username'=> $socket->username,
-            'message'=> $data
-        ));
+       
+        if( $socket->room == $data['userRoom'] && !empty($socket->adapter->sids[$clients[$data['reciverId']]][$data['userRoom']])){
+            print_r(1);
+            $socket->broadcast->to($data['userRoom'])->emit('message',$data["msg"]);
+            $msgInfo = [
+                "msg" => $data["msg"],
+                "room" => $data['userId'],
+            ];
+            $socket->broadcast->to($data['userRoom'])->emit('addMessage',$msgInfo);
+        }else{
+            print_r(2);
+            $socket->leave($socket->room);
+            if(empty($socket->adapter->sids[$clients[$data['reciverId']]][$data['userRoom']])){
+                print_r(3);
+                $socket->room = $data['reciverId'];
+                $socket->join($data['reciverId']);
+                $socket->broadcast->to($data['reciverId'])->emit('message',$data["msg"]);
+                $msgInfo = [
+                    "msg" => $data["msg"],
+                    "room" =>$data['userId'],
+                ];
+                $socket->broadcast->to($data['reciverId'])->emit('addMessage',$msgInfo);
+                $socket->leave($socket->room);
+                $socket->room = $data['userRoom'];
+                $socket->join($data['userRoom']);
+                $userRooms[$data['userRoom']]=$data['userRoom'];
+     
+                
+            }else{
+                print_r(4);
+                $socket->room = $data['userRoom'];
+                $socket->join($data['userRoom']);
+                $userRooms[$data['userRoom']]=$data['userRoom'];
+                $socket->broadcast->to($data['userRoom'])->emit('message',$data["msg"]);
+                $msgInfo = [
+                    "msg" => $data["msg"],
+                    "room" => $data['userId'],
+                ];
+                $socket->broadcast->to($data['userRoom'])->emit('addMessage',$msgInfo);
+            }
+        }
+        
     });
 
+    $socket->on('isLoggedIn', function ($data)use($socket){
+        global $usernames;
+        // we tell the client to execute 'new message'
+        if(array_key_exists($data['reciverId'],$usernames)){
+            $socket->emit('isLoggedIn', true);
+          
+        }else{
+            print_r("usuario no conectado");
+            $socket->emit('isLoggedIn', false);
+        } 
+    });
+   
     // when the client emits 'add user', this listens and executes
-    $socket->on('add user', function ($username) use($socket){
-        global $usernames, $numUsers;
-        // we store the username in the socket session for this client
-        $socket->username = $username;
-        // add the client's username to the global list
-        $usernames[$username] = $username;
-        ++$numUsers;
-        $socket->addedUser = true;
-        $socket->emit('login', array( 
-            'numUsers' => $numUsers
-        ));
-        // echo globally (all clients) that a person has connected
-        $socket->broadcast->emit('user joined', array(
-            'username' => $socket->username,
-            'numUsers' => $numUsers
-        ));
+    $socket->on('add user', function ($data) use($socket){
+        global $usernames,$clients,$io;
+       if($socket->username == $data['userId']){
+        $socket->emit('added', "usuario agregado al socket");
+       }else{
+          // we store the username in the socket session for this client
+          $socket->username = $data['userId'];
+          // add the client's username to the global list
+          $usernames[$data['userId']]=$data['userId'];
+          $socket->addedUser = true;
+          $clients[$data['userId']] = $socket->id;
+          $socket->room = $data['userId'];
+          $socket->join($data['userId']);
+          echo $socket->id;
+          print_r($socket->rooms);
+          $socket->emit('added', "usuario agregado al socket");
+       }
     });
 
     // when the client emits 'typing', we broadcast it to others
