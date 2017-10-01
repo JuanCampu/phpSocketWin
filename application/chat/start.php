@@ -22,25 +22,29 @@ $io->on('connection', function($socket){
         global $usernames, $clients;
         // we tell the client to execute 'new message'
        
+        
         if( $socket->room == $data['userRoom'] && !empty($socket->adapter->sids[$clients[$data['reciverId']]][$data['userRoom']])){
+            //Entra si el usuario emisor ya se unio a una sala de conversación con el receptor y si el receptor también se encuentra en la sala
             print_r(1);
             $socket->broadcast->to($data['userRoom'])->emit('message',$data["msg"]);
             $msgInfo = [
                 "msg" => $data["msg"],
-                "room" => $data['userId'],
+                "receptorId" => $data['userId'],
             ];
             $socket->broadcast->to($data['userRoom'])->emit('addMessage',$msgInfo);
         }else{
+            //Entra si el usuario emisor va uniser a la sala del usuario receptor.
             print_r(2);
             $socket->leave($socket->room);
             if(empty($socket->adapter->sids[$clients[$data['reciverId']]][$data['userRoom']])){
+                //entra si el usuario receptor no tiene una sala con el usuario emisor. 
                 print_r(3);
                 $socket->room = $data['reciverId'];
                 $socket->join($data['reciverId']);
                 $socket->broadcast->to($data['reciverId'])->emit('message',$data["msg"]);
                 $msgInfo = [
                     "msg" => $data["msg"],
-                    "room" =>$data['userId'],
+                    "receptorId" =>$data['userId'],
                 ];
                 $socket->broadcast->to($data['reciverId'])->emit('addMessage',$msgInfo);
                 $socket->leave($socket->room);
@@ -50,14 +54,15 @@ $io->on('connection', function($socket){
      
                 
             }else{
+                //entra si el usuario receptor ya tien  una sala para usar con  el usuario emisor
                 print_r(4);
                 $socket->room = $data['userRoom'];
                 $socket->join($data['userRoom']);
-                $userRooms[$data['userRoom']]=$data['userRoom'];
+                $userRooms[$data['userId']]=$data['userRoom'];
                 $socket->broadcast->to($data['userRoom'])->emit('message',$data["msg"]);
                 $msgInfo = [
                     "msg" => $data["msg"],
-                    "room" => $data['userId'],
+                    "receptorId" => $data['userId'],
                 ];
                 $socket->broadcast->to($data['userRoom'])->emit('addMessage',$msgInfo);
             }
@@ -91,6 +96,7 @@ $io->on('connection', function($socket){
           $clients[$data['userId']] = $socket->id;
           $socket->room = $data['userId'];
           $socket->join($data['userId']);
+          $userRooms[$data['userId']]=$data['userId'];
           echo $socket->id;
           print_r($socket->rooms);
           $socket->emit('added', "usuario agregado al socket");
