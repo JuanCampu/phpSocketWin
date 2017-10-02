@@ -29,6 +29,7 @@ $io->on('connection', function($socket){
             $socket->broadcast->to($data['userRoom'])->emit('message',$data["msg"]);
             $msgInfo = [
                 "msg" => $data["msg"],
+                "crt" => false,
                 "receptorId" => $data['userId'],
             ];
             $socket->broadcast->to($data['userRoom'])->emit('addMessage',$msgInfo);
@@ -44,6 +45,7 @@ $io->on('connection', function($socket){
                 $socket->broadcast->to($data['reciverId'])->emit('message',$data["msg"]);
                 $msgInfo = [
                     "msg" => $data["msg"],
+                    "crt" => false,
                     "receptorId" =>$data['userId'],
                 ];
                 $socket->broadcast->to($data['reciverId'])->emit('addMessage',$msgInfo);
@@ -62,6 +64,7 @@ $io->on('connection', function($socket){
                 $socket->broadcast->to($data['userRoom'])->emit('message',$data["msg"]);
                 $msgInfo = [
                     "msg" => $data["msg"],
+                    "crt" => false,
                     "receptorId" => $data['userId'],
                 ];
                 $socket->broadcast->to($data['userRoom'])->emit('addMessage',$msgInfo);
@@ -75,16 +78,17 @@ $io->on('connection', function($socket){
         // we tell the client to execute 'new message'
         if(array_key_exists($data['reciverId'],$usernames)){
             $socket->emit('isLoggedIn', true);
-          
+            print_r("userLoging");
         }else{
             print_r("usuario no conectado");
             $socket->emit('isLoggedIn', false);
+            print_r("usernotLoging");
         } 
     });
    
     // when the client emits 'add user', this listens and executes
     $socket->on('add user', function ($data) use($socket){
-        global $usernames,$clients,$io;
+        global $usernames,$clients,$io, $userRooms;
        if($socket->username == $data['userId']){
         $socket->emit('added', "usuario agregado al socket");
        }else{
