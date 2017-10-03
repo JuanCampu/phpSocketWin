@@ -19,56 +19,36 @@ $io->on('connection', function($socket){
    
     // when the client emits 'new message', this listens and executes
     $socket->on('message', function ($data)use($socket){
-        global $usernames, $clients;
+        global $usernames, $clients,$userRooms;
         // we tell the client to execute 'new message'
-       
+       print_R($userRooms);
         
-        if( $socket->room == $data['userRoom'] && !empty($socket->adapter->sids[$clients[$data['reciverId']]][$data['userRoom']])){
+        if( $socket->room == $userRooms[$data['reciverId']]){
             //Entra si el usuario emisor ya se unio a una sala de conversación con el receptor y si el receptor también se encuentra en la sala
             print_r(1);
-            $socket->broadcast->to($data['userRoom'])->emit('message',$data["msg"]);
+            $socket->broadcast->to($userRooms[$data['reciverId']])->emit('message',$data["msg"]);
             $msgInfo = [
                 "msg" => $data["msg"],
                 "crt" => false,
                 "receptorId" => $data['userId'],
+                "actualId" =>$data['reciverId']
             ];
-            $socket->broadcast->to($data['userRoom'])->emit('addMessage',$msgInfo);
+            $socket->broadcast->to($userRooms[$data['reciverId']])->emit('addMessage',$msgInfo);
         }else{
             //Entra si el usuario emisor va uniser a la sala del usuario receptor.
             print_r(2);
-            $socket->leave($socket->room);
-            if(empty($socket->adapter->sids[$clients[$data['reciverId']]][$data['userRoom']])){
-                //entra si el usuario receptor no tiene una sala con el usuario emisor. 
-                print_r(3);
-                $socket->room = $data['reciverId'];
-                $socket->join($data['reciverId']);
-                $socket->broadcast->to($data['reciverId'])->emit('message',$data["msg"]);
-                $msgInfo = [
-                    "msg" => $data["msg"],
-                    "crt" => false,
-                    "receptorId" =>$data['userId'],
-                ];
-                $socket->broadcast->to($data['reciverId'])->emit('addMessage',$msgInfo);
-                $socket->leave($socket->room);
-                $socket->room = $data['userRoom'];
-                $socket->join($data['userRoom']);
-                $userRooms[$data['userRoom']]=$data['userRoom'];
-     
-                
-            }else{
-                //entra si el usuario receptor ya tien  una sala para usar con  el usuario emisor
-                print_r(4);
-                $socket->room = $data['userRoom'];
-                $socket->join($data['userRoom']);
-                $userRooms[$data['userId']]=$data['userRoom'];
-                $socket->broadcast->to($data['userRoom'])->emit('message',$data["msg"]);
-                $msgInfo = [
-                    "msg" => $data["msg"],
-                    "crt" => false,
-                    "receptorId" => $data['userId'],
-                ];
-                $socket->broadcast->to($data['userRoom'])->emit('addMessage',$msgInfo);
-            }
+            $socket->leave($socket->room); 
+            $socket->room = $userRooms[$data['reciverId']];
+            $socket->join($userRooms[$data['reciverId']]);
+            $userRooms[$data['userId']] = $userRooms[$data['reciverId']];
+            $socket->broadcast->to($userRooms[$data['reciverId']])->emit('message',$data["msg"]);
+            $msgInfo = [
+                "msg" => $data["msg"],
+                "crt" => false,
+                "receptorId" =>$data['userId'],
+                "actualId" =>$data['reciverId']
+            ];
+            $socket->broadcast->to($userRooms[$data['reciverId']])->emit('addMessage',$msgInfo);
         }
         
     });
@@ -102,7 +82,7 @@ $io->on('connection', function($socket){
           $socket->join($data['userId']);
           $userRooms[$data['userId']]=$data['userId'];
           echo $socket->id;
-          print_r($socket->rooms);
+          print_r($userRooms);
           $socket->emit('added', "usuario agregado al socket");
        }
     });
